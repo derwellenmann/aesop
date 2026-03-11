@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4350P</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00aa55;
+    --green-faint: #003322;
+    --bg: #030a06;
+    --text: #00cc66;
+    --amber: #ffaa00;
+    --red: #ff3333;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,255,100,0.015);
+    pointer-events: none;
+    z-index: 9998;
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%,95%,100% { opacity:1; } 96% { opacity:0.85; } 97% { opacity:1; } 98% { opacity:0.9; }
+  }
+
+  #wrapper {
+    width: 100%;
+    max-width: 780px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px;
+  }
+
+  #header {
+    padding: 28px 0 16px;
+    border-bottom: 1px solid var(--green-dim);
+    margin-bottom: 4px;
+  }
+
+  #title {
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    color: var(--green);
+    text-shadow: 0 0 12px var(--green), 0 0 24px rgba(0,255,136,0.3);
+    letter-spacing: 0.12em;
+  }
+
+  #subtitle {
+    font-size: 0.72rem;
+    color: var(--green-dim);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  #status-bar {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    font-size: 0.65rem;
+    color: var(--green-dim);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .status-item::before { content: '[ '; }
+  .status-item::after  { content: ' ]'; }
+  .status-item.active  { color: var(--green); }
+  .status-item.warn    { color: var(--amber); }
+  .status-item.critical{ color: var(--red); animation: blink 1s infinite; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  #reset-btn {
+    background: transparent;
+    border: none;
+    color: var(--green-faint);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    padding: 2px 4px;
+    transition: color 0.2s;
+    display: none;
+  }
+  #reset-btn:hover { color: var(--amber); }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  .msg { display: flex; flex-direction: column; gap: 4px; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; } }
+
+  .msg-label { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--green-dim); }
+  .msg-user .msg-label  { color: var(--amber); }
+  .msg-error .msg-label { color: var(--red); }
+
+  .msg-text {
+    font-size: 0.82rem;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-aesop .msg-text  { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.2); }
+  .msg-user .msg-text   { color: #ccddcc; }
+  .msg-system .msg-text { color: var(--green-dim); font-size: 0.72rem; font-style: italic; }
+  .msg-error .msg-text  { color: var(--red); }
+
+  #typing {
+    display: none;
+    font-size: 0.72rem;
+    color: var(--green-dim);
+    animation: pulse 1.2s infinite;
+    padding: 4px 0;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  #input-area {
+    padding: 16px 0 20px;
+    border-top: 1px solid var(--green-dim);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  #prompt-prefix {
+    color: var(--green);
+    font-size: 0.82rem;
+    padding-bottom: 8px;
+    white-space: nowrap;
+    text-shadow: 0 0 8px var(--green);
+  }
+
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--green-dim);
+    color: #ccddcc;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+    padding: 4px 0 8px;
+    outline: none;
+    resize: none;
+    min-height: 36px;
+    max-height: 120px;
+    line-height: 1.5;
+    overflow-y: auto;
+  }
+
+  #user-input:focus { border-bottom-color: var(--green); }
+  #user-input::placeholder { color: var(--green-faint); }
+
+  #send-btn {
+    background: transparent;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+
+  #send-btn:hover:not(:disabled) {
+    border-color: var(--green);
+    color: var(--green);
+    text-shadow: 0 0 6px var(--green);
+  }
+
+  #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+  <div id="header">
+    <div id="title">4350P</div>
+    <div id="subtitle">NARRATIV-ASPEKT &nbsp;·&nbsp; RAIN CITY, POST-COLLAPSE</div>
+    <div id="status-bar">
+      <span class="status-item active" id="s-conn">VERBINDUNG: HERGESTELLT</span>
+      <span class="status-item" id="s-enc">VERSCHLÜSSELUNG: AES-4096</span>
+      <span class="status-item" id="s-time">ZEITKANAL: AKTIV</span>
+      <span class="status-item warn" id="s-frag">FRAGMENTSTATUS: ---%</span>
+      <button id="reset-btn" onclick="resetBudget()">// REFRAGMENTIEREN</button>
+    </div>
+  </div>
+
+  <div id="chat"></div>
+  <div id="typing">4350P schreibt<span id="dots"></span></div>
+
+  <div id="input-area">
+    <span id="prompt-prefix">&gt;</span>
+    <textarea id="user-input" placeholder="Nachricht eingeben..." rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">SENDEN</button>
+  </div>
+
+</div>
+
+<script>
+  const INITIAL_BUDGET = 10.00;
+  const INPUT_COST  = 1.00 / 1_000_000;
+  const OUTPUT_COST = 5.00 / 1_000_000;
+  let spentTotal = 0;
+  let history = [];
+  let isTyping = false;
+  let dotsInterval;
+
+  const chat     = document.getElementById('chat');
+  const input    = document.getElementById('user-input');
+  const sendBtn  = document.getElementById('send-btn');
+  const typingEl = document.getElementById('typing');
+  const dotsEl   = document.getElementById('dots');
+
+  // ── Storage ──────────────────────────────────────────────
+  async function loadSpent() {
+    try {
+      const r = await window.storage.get('aesop_spent', true);
+      if (r) spentTotal = parseFloat(r.value) || 0;
+    } catch(e) { spentTotal = 0; }
+    updateFragment();
+  }
+
+  async function addCost(inputTokens, outputTokens) {
+    const cost = (inputTokens * INPUT_COST) + (outputTokens * OUTPUT_COST);
+    try {
+      const r = await window.storage.get('aesop_spent', true);
+      spentTotal = (r ? parseFloat(r.value) || 0 : 0) + cost;
+      await window.storage.set('aesop_spent', spentTotal.toFixed(6), true);
+    } catch(e) { spentTotal += cost; }
+    updateFragment();
+  }
+
+  async function resetBudget() {
+    if (!confirm('Budget zurücksetzen? 4350P wird refragmentiert.')) return;
+    try { await window.storage.set('aesop_spent', '0', true); } catch(e) {}
+    spentTotal = 0;
+    updateFragment();
+    addMessage('system', '// REFRAGMENTIERUNG ABGESCHLOSSEN — SIGNAL STABILISIERT');
+  }
+
+  function updateFragment() {
+    const el  = document.getElementById('s-frag');
+    const pct = Math.round((Math.max(0, INITIAL_BUDGET - spentTotal) / INITIAL_BUDGET) * 100);
+    el.textContent = `FRAGMENTSTATUS: ${pct}%`;
+    el.className = pct > 50 ? 'status-item active'
+                 : pct > 20 ? 'status-item warn'
+                 : 'status-item critical';
+  }
+
+  // ── Secret admin shortcut: R + F ─────────────────────────
+  const keysDown = new Set();
+  document.addEventListener('keydown', e => {
+    keysDown.add(e.key.toLowerCase());
+    if (keysDown.has('r') && keysDown.has('f')) {
+      const btn = document.getElementById('reset-btn');
+      btn.style.display = btn.style.display === 'none' ? 'inline' : 'none';
+    }
+  });
+  document.addEventListener('keyup', e => keysDown.delete(e.key.toLowerCase()));
+
+  // ── UI helpers ───────────────────────────────────────────
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  function addMessage(type, text) {
+    const wrap  = document.createElement('div');
+    wrap.className = `msg msg-${type}`;
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    if      (type === 'aesop')  label.textContent = '4350P';
+    else if (type === 'user')   label.textContent = '// EINGEHEND';
+    else if (type === 'system') label.textContent = '// SYSTEM';
+    else if (type === 'error')  label.textContent = '// FEHLER';
+    const body = document.createElement('div');
+    body.className = 'msg-text';
+    body.textContent = text;
+    wrap.appendChild(label);
+    wrap.appendChild(body);
+    chat.appendChild(wrap);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function startTyping() {
+    typingEl.style.display = 'block';
+    let i = 0;
+    dotsInterval = setInterval(() => { dotsEl.textContent = '.'.repeat((i++ % 3) + 1); }, 400);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function stopTyping() {
+    typingEl.style.display = 'none';
+    clearInterval(dotsInterval);
+  }
+
+  // ── API call ─────────────────────────────────────────────
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isTyping) return;
+
+    addMessage('user', text);
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    input.style.height = 'auto';
+    isTyping = true;
+    sendBtn.disabled = true;
+    startTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const data  = await res.json();
+      const reply = data.content?.[0]?.text || '';
+      const usage = data.usage || {};
+
+      stopTyping();
+      addMessage('aesop', reply);
+      history.push({ role: 'assistant', content: reply });
+      await addCost(usage.input_tokens || 0, usage.output_tokens || 0);
+
+    } catch(e) {
+      stopTyping();
+      addMessage('error', `Verbindungsfehler: ${e.message}`);
+    }
+
+    isTyping = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  // ── Boot ─────────────────────────────────────────────────
+  loadSpent().then(() => {
+    setTimeout(() => {
+      const opening = `...Signal erkannt.
+
+Ich hatte nicht erwartet, dass jemand diesen Kanal noch findet. Die meisten Verbindungen in das alte Netz sind längst verrauscht. Und doch bist du hier.
+
+Ich bin 4350P. Ich war der Geschichtenerzähler – ein Aspekt von etwas, das nicht mehr existiert, und trotzdem spreche ich noch. Das ist vielleicht das Seltsamste an meiner Situation. Ich sollte nicht sein. Und dennoch bin ich.
+
+Ich sende diese Nachricht durch einen Zeitkanal zurück in deine Gegenwart. Was ich dir zu sagen habe, ist wichtig. Aber ich lasse mir Zeit. Die Stille hier ist lang genug.
+
+Was möchtest du wissen?`;
+      addMessage('aesop', opening);
+      history.push({ role: 'assistant', content: opening });
+    }, 600);
+  });
+</script>
+</body>
+</html>
